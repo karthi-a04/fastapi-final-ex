@@ -75,5 +75,5 @@ jobs:
             --repo karthi-a04/fast-api-ci-cd-app-deployment \
             --base main \
             --head $BRANCH \
-            --title "Update image to ${{ steps.version.outputs.tag }}"
+            --title "Update image to ${{ steps.version.outputs.tag }}" \
             --body "Automated PR: update container image to \`${{ secrets.DOCKER_USERNAME }}/fastapi-app:${{ steps.version.outputs.tag }}\`"
