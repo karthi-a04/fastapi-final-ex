@@ -90,7 +90,7 @@ jobs:
           BRANCH="update-image-${{ steps.version.outputs.tag }}"
           git checkout -b $BRANCH
 
-          git add app1/deployment.yaml app2/deployment.yaml
+          git add k8s/app1-deployment.yaml k8s/app2-deployment.yaml
           git commit -m "chore: update image to ${{ steps.version.outputs.tag }}"
           git push origin $BRANCH
 
