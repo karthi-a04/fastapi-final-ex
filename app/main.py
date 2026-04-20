@@ -17,7 +17,7 @@ formatter = logging.Formatter(
 )
 handler.setFormatter(formatter)
 
-logger = logging.getLogger("app")
+logger = logging.getLogger(SERVICE_NAME)
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
 
