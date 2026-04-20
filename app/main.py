@@ -6,10 +6,16 @@ from fastapi import FastAPI
 SERVICE_NAME = os.getenv("SERVICE_NAME", "unknown_service")
 
 handler = logging_loki.LokiHandler(
-    url="http://loki-gateway.loki.svc.cluster.local/",
-    tags={"service": SERVICE_NAME},   # ← this becomes the label in Grafana
+    url="http://loki-gateway.loki.svc.cluster.local/loki/api/v1/push",
+    tags={"service": SERVICE_NAME},
     version="1",
 )
+
+# ✅ Add proper formatter
+formatter = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+handler.setFormatter(formatter)
 
 logger = logging.getLogger("app")
 logger.setLevel(logging.INFO)
