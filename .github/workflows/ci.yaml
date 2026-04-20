@@ -7,73 +7,96 @@ on:
     branches: [main]
 
 jobs:
+  # ─────────────────────────────────────────────
+  # 1️⃣ PR → validate build only
+  # ─────────────────────────────────────────────
   test-and-build:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - run: pip install -r requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-      - run: python -c "import fastapi"
+      - name: Basic validation
+        run: python -c "import fastapi"
 
-      - run: docker build -t fastapi-app:pr-${{ github.event.pull_request.number }} .
+      - name: Build Docker image (no push)
+        run: docker build -t fastapi-app:pr-${{ github.event.pull_request.number }} .
 
+  # ─────────────────────────────────────────────
+  # 2️⃣ MAIN → build + push + raise PR
+  # ─────────────────────────────────────────────
   test-build-push:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set tag
+      # 🔖 Generate image tag
+      - name: Set image tag
         id: version
         run: echo "tag=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
 
-      - uses: docker/login-action@v3
+      # 🔐 Login to DockerHub
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - uses: docker/build-push-action@v6
+      # 🐳 Build + Push (combined step)
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/fastapi-app:${{ steps.version.outputs.tag }}
 
-      - name: Checkout deploy repo
+      # 📦 Checkout deployment repo
+      - name: Checkout deployment repository
         uses: actions/checkout@v4
         with:
-          repository: karthi-a04/fast-api-ci-cd-app-deployment
+          repository: karthi-a04/fastapi-final-ex-deployment
           token: ${{ secrets.GH_PAT }}
           path: deploy-repo
 
-      - name: Update image
+      # ✏️ Update image tag in deployment.yaml
+      - name: Update image version
         run: |
-          sed -i "s|\(image: .*/fastapi-app:\).*|\1${{ steps.version.outputs.tag }}|" deploy-repo/deployment.yaml
+          sed -i "s|\(image: .*/fastapi-app:\).*|\1${{ steps.version.outputs.tag }}|" deploy-repo/app1/deployment.yaml
+          sed -i "s|\(image: .*/fastapi-app:\).*|\1${{ steps.version.outputs.tag }}|" deploy-repo/app2/deployment.yaml
 
-      - name: Create PR
+      # 🔁 Create PR to deployment repo
+      - name: Create Pull Request
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           cd deploy-repo
+
           git config user.name "github-actions"
           git config user.email "actions@github.com"
 
           BRANCH="update-image-${{ steps.version.outputs.tag }}"
           git checkout -b $BRANCH
-          git add deployment.yaml
-          git commit -m "chore: update image tag to ${{ steps.version.outputs.tag }}"
+
+          git add app1/deployment.yaml app2/deployment.yaml
+          git commit -m "chore: update image to ${{ steps.version.outputs.tag }}"
           git push origin $BRANCH
 
           gh pr create \
-            --repo karthi-a04/fast-api-ci-cd-app-deployment \
+            --repo karthi-a04/fastapi-final-ex-deployment \
             --base main \
             --head $BRANCH \
-            --title "Update image to ${{ steps.version.outputs.tag }}" \
-            --body "Automated PR: update container image to \`${{ secrets.DOCKER_USERNAME }}/fastapi-app:${{ steps.version.outputs.tag }}\`"
+            --title "Update FastAPI image to ${{ steps.version.outputs.tag }}" \
+            --body "Automated PR: updated image to \`${{ secrets.DOCKER_USERNAME }}/fastapi-app:${{ steps.version.outputs.tag }}\`"
