@@ -11,13 +11,13 @@ handler = logging_loki.LokiHandler(
     version="1",
 )
 
-# ✅ Add proper formatter
 formatter = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    f"%(asctime)s - {SERVICE_NAME} - %(levelname)s - %(message)s"
 )
+
 handler.setFormatter(formatter)
 
-logger = logging.getLogger(SERVICE_NAME)
+logger = logging.getLogger("app")
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
 
