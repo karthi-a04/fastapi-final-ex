@@ -1,21 +1,28 @@
 import os
 import logging
+import logging_loki
 from fastapi import FastAPI
-from pythonjsonlogger import jsonlogger
 
-# Set up JSON logging
-logger = logging.getLogger()
+SERVICE_NAME = os.getenv("SERVICE_NAME", "unknown_service")
+
+handler = logging_loki.LokiHandler(
+    url=LOKI_URL,
+    tags={"service": SERVICE_NAME},   # ← this becomes the label in Grafana
+    version="1",
+)
+
+logger = logging.getLogger("app")
 logger.setLevel(logging.INFO)
-handler = logging.StreamHandler()
-formatter = jsonlogger.JsonFormatter()
-handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 app = FastAPI()
 
-SERVICE_NAME = os.getenv("SERVICE_NAME", "unknown_service")
-
 @app.get("/")
 def read_root():
-    logging.info("Request hit", extra={"service": SERVICE_NAME})
+    logger.info("Root endpoint hit")
     return {"message": f"Hello from {SERVICE_NAME}"}
+
+@app.get("/health")
+def health():
+    logger.info("Health check")
+    return {"status": "ok", "service": SERVICE_NAME}
