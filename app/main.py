@@ -6,7 +6,7 @@ from fastapi import FastAPI
 SERVICE_NAME = os.getenv("SERVICE_NAME", "unknown_service")
 
 handler = logging_loki.LokiHandler(
-    url=LOKI_URL,
+    url="http://loki-gateway.loki.svc.cluster.local/",
     tags={"service": SERVICE_NAME},   # ← this becomes the label in Grafana
     version="1",
 )
