@@ -74,8 +74,8 @@ jobs:
       # ✏️ Update image tag in deployment.yaml
       - name: Update image version
         run: |
-          sed -i "s|\(image: .*/fastapi-app:\).*|\1${{ steps.version.outputs.tag }}|" deploy-repo/app1/deployment.yaml
-          sed -i "s|\(image: .*/fastapi-app:\).*|\1${{ steps.version.outputs.tag }}|" deploy-repo/app2/deployment.yaml
+          sed -i "s|\(image: .*/fastapi-app:\).*|\1${{ steps.version.outputs.tag }}|" deploy-repo/k8s/app1-deployment.yaml
+          sed -i "s|\(image: .*/fastapi-app:\).*|\1${{ steps.version.outputs.tag }}|" deploy-repo/k8s/app2-deployment.yaml
 
       # 🔁 Create PR to deployment repo
       - name: Create Pull Request
